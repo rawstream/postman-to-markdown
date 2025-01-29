@@ -1,3 +1,8 @@
+> This is a fork of [postman-to-markdown](https://github.com/bautistaj/postman-to-markdown/)
+
+**The readme of the original repo can be seen below.**
+
+--------------------------
 
 ![npm](https://img.shields.io/npm/v/postman-to-markdown?style=plastic)
 
