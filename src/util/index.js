@@ -56,7 +56,7 @@ function readRequestOptions(request) {
     request.header.map((header) => {
       markdown += `### Headers\n`;
       markdown += `\n`;
-      markdown += `|Content-Type|Value|\n`;
+      markdown += `|Key|Value|\n`;
       markdown += `|---|---|\n`;
       markdown += `|${header.key}|${header.value}|\n`;
       markdown += `\n`;
