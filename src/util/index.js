@@ -8,11 +8,13 @@ const chalk = require(`chalk`);
  */
 function createStructureOfMarkdown(docJson) {
   let markdown = "";
-  markdown += `# Project: ${docJson?.info?.name}\n`;
+  markdown += `# ${docJson.info?.name}\n`;
   markdown +=
     docJson.info.description !== undefined
       ? `${docJson.info.description || ""}\n`
       : ``;
+
+  markdown += readAuthorization(docJson.auth, 0);
   markdown += readItems(docJson.item);
 
   return markdown;
@@ -22,19 +24,19 @@ function createStructureOfMarkdown(docJson) {
  * Read auth of each method
  * @param {object} auth
  */
-function readAuthorization(auth) {
+function readAuthorization(auth, folderDeep = 1) {
   let markdown = "";
   if (auth) {
-    markdown += `### 🔑 Authentication ${auth.type}\n`;
+    markdown += `##${'#'.repeat(Math.min(folderDeep, 4))} 🔑 Authorization (${auth.type})\n`;
     markdown += `\n`;
-    markdown += `|Param|value|Type|\n`;
+    markdown += `|Key|Value|Type|\n`;
     markdown += `|---|---|---|\n`;
     if (auth.bearer) {
       if(auth.bearer.token) {
         markdown += `|token|${auth.bearer.token}|\n`;
       } else {
-        auth.bearer.map((auth) => {
-          markdown += `|${auth.key}|${auth.value}|${auth.type}|\n`;
+        auth.bearer.map((_) => {
+          markdown += `|${_.key}|${_.value}|${_.type}|\n`;
         });
       }
     }
@@ -50,11 +52,11 @@ function readAuthorization(auth) {
  * @param {object} request information
  * @return {string} info of data about request options
  */
-function readRequestOptions(request) {
+function readRequestOptions(request, folderDeep = 1) {
   let markdown = "";
   if (request) {
     request.header.map((header) => {
-      markdown += `### Headers\n`;
+      markdown += `##${'#'.repeat(Math.min(folderDeep, 4))} Headers\n`;
       markdown += `\n`;
       markdown += `|Key|Value|\n`;
       markdown += `|---|---|\n`;
@@ -66,15 +68,15 @@ function readRequestOptions(request) {
   return markdown;
 }
 
-function readQueryParams(url) {
+function readQueryParams(url, folderDeep = 1) {
   let markdown = "";
   if (url?.query) {
-    markdown += `### Query Params\n`;
+    markdown += `##${'#'.repeat(Math.min(folderDeep, 4))} Query Params\n`;
     markdown += `\n`;
-    markdown += `|Key|Value|Description|\n`;
+    markdown += `|Key|Description|Example|\n`;
     markdown += `|---|---|---|\n`;
     url.query.map((query) => {
-      markdown += `|${query.key}|${query.value}|${query.description}|\n`;
+      markdown += `|${query.key}|${query.description}|${query.value}|\n`;
     });
     markdown += `\n`;
     markdown += `\n`;
@@ -82,26 +84,44 @@ function readQueryParams(url) {
 
   return markdown;
 }
+function readPathVariables(url, folderDeep = 1) {
+  let markdown = "";
+  if (url?.variable) {
+    markdown += `##${'#'.repeat(Math.min(folderDeep, 4))} Path Params\n`;
+    markdown += `\n`;
+    markdown += `|Key|Description|Example|\n`;
+    markdown += `|---|---|---|\n`;
+    url.variable.map((path) => {
+      if (path.key) markdown += `|${path.key}|${path.description ?? ''}|${path.value ?? ''}|\n`;
+    });
+    markdown += `\n`;
+    markdown += `\n`;
+  }
+
+  return markdown;
+
+}
 
 /**
  * Read objects of each method
  * @param {object} body
  */
-function readFormDataBody(body) {
+function readFormDataBody(body, folderDeep = 1) {
   let markdown = "";
 
   if (body) {
     if (body.mode === "raw") {
-      markdown += `### Body (**${body.mode}**)\n`;
+      const language = body.options?.raw?.language;
+      markdown += `##${'#'.repeat(Math.min(folderDeep, 4))} Body (**${language ?? body.mode}**)\n`;
       markdown += `\n`;
-      markdown += `\`\`\`json\n`;
+      markdown += `\`\`\`${language || ''}\n`;
       markdown += `${body.raw}\n`;
       markdown += `\`\`\`\n`;
       markdown += `\n`;
     }
 
     if (body.mode === "formdata") {
-      markdown += `### Body ${body.mode}\n`;
+      markdown += `##${'#'.repeat(Math.min(folderDeep, 4))} Body ${body.mode}\n`;
       markdown += `\n`;
       markdown += `|Param|value|Type|\n`;
       markdown += `|---|---|---|\n`;
@@ -126,11 +146,11 @@ function readFormDataBody(body) {
  * Read methods of response
  * @param {array} responses
  */
-function readResponse(responses) {
+function readResponse(responses, folderDeep) {
   let markdown = "";
   if (responses?.length) {
-    responses.forEach(response => {
-          markdown += `### Response: ${response.code}\n`;
+    responses.forEach((response) => {
+          markdown += `##${'#'.repeat(Math.min(folderDeep, 4))} Example Response (HTTP ${response.code})\n`;
           markdown += `\`\`\`json\n`;
           markdown += `${response.body}\n`;
           markdown += `\`\`\`\n`;
@@ -144,24 +164,24 @@ function readResponse(responses) {
  * Read methods of each item
  * @param {object} post
  */
-function readMethods(method) {
+function readMethods(method, folderDeep = 1) {
   let markdown = "";
 
   markdown += `\n`;
-  markdown += `## End-point: ${method.name}\n`;
+  markdown += `#${'#'.repeat(Math.min(folderDeep, 5))} \`${method.request?.method}\` ${method.name}\n`;
   markdown +=
     method?.request?.description !== undefined
       ? `${method?.request?.description || ""}\n`
       : ``;
-  markdown += `### Method: ${method?.request?.method}\n`;
   markdown += `>\`\`\`\n`;
   markdown += `>${method?.request?.url?.raw}\n`;
   markdown += `>\`\`\`\n`;
-  markdown += readRequestOptions(method?.request);
-  markdown += readFormDataBody(method?.request?.body);
-  markdown += readQueryParams(method?.request?.url);
-  markdown += readAuthorization(method?.request?.auth);
-  markdown += readResponse(method?.response);
+  markdown += readRequestOptions(method?.request, folderDeep);
+  markdown += readFormDataBody(method?.request?.body, folderDeep);
+  markdown += readQueryParams(method?.request?.url, folderDeep);
+  markdown += readPathVariables(method?.request?.url, folderDeep);
+  markdown += readAuthorization(method?.request?.auth, folderDeep);
+  markdown += readResponse(method?.response, folderDeep);
   markdown += `\n`;
   markdown += `⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃\n`;
 
@@ -172,11 +192,11 @@ function readMethods(method) {
  * Read items of json postman
  * @param {Array} items
  */
-function readItems(items, folderDeep = 1) {
+function readItems(items, folderDeep = 2) {
   let markdown = "";
   items.forEach((item) => {
     if (item.item instanceof Array) {
-      markdown += `${"#".repeat(folderDeep)} 📁 Collection: ${item.name} \n`;
+      markdown += `${"#".repeat(folderDeep)} 📁 ${item.name} \n`;
       markdown += `${item.description} \n`;
       markdown += `\n`;
 
@@ -184,7 +204,7 @@ function readItems(items, folderDeep = 1) {
         if (item.item instanceof Array) {
           markdown += readItems(item.item, folderDeep + 1);
         } else {
-          markdown += readMethods(item);
+          markdown += readMethods(item, folderDeep);
         }
       });
     } else {
