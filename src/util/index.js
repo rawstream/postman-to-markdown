@@ -26,7 +26,7 @@ function createStructureOfMarkdown(docJson) {
  */
 function readAuthorization(auth, folderDeep = 1) {
   let markdown = "";
-  if (auth) {
+  if (auth && auth.type !== "noauth") {
     markdown += `##${'#'.repeat(Math.min(folderDeep, 4))} 🔑 Authorization (${auth.type})\n`;
     markdown += `\n`;
     markdown += `|Key|Value|Type|\n`;
